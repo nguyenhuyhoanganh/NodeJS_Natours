@@ -50,23 +50,27 @@ exports.getTour = async (req, res) => {
   }
 };
 
-exports.createTour = async (req, res) => {
-  try {
-    // const newTour = new Tour({});
-    // newTour.save();
-    const newTour = await Tour.create(req.body);
-
-    res.status(201).json({
-      status: 'success',
-      data: { newTour }
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err
-    });
-  }
+// handle async err:
+// 1. async fn trả về 1 promise bị reject khi có err
+// 2. bắt err bằng cách promise.catch()
+const catchAsync = fn => {
+  return (req, res, next) => {
+    // fn(req, res, next).catch(err => next(err));
+    fn(req, res, next).catch(next);
+    // catch chuyển err vào next() để đưa err kết thúc ở globalErroeHandling middleware
+  };
 };
+// catchAsync nhận vào 1 funtion trả về 1 function , function này sẽ được gán cho exports.createTour
+exports.createTour = catchAsync(async (req, res) => {
+  // const newTour = new Tour({});
+  // newTour.save();
+  const newTour = await Tour.create(req.body);
+
+  res.status(201).json({
+    status: 'success',
+    data: { newTour }
+  });
+});
 
 exports.updateTour = async (req, res) => {
   try {
@@ -147,11 +151,13 @@ exports.getTourStats = async (req, res) => {
 
 exports.getMonthlyPlan = async (req, res) => {
   try {
-    const year = req.params.year * 1; // 2021
+    const year = +req.params.year; // 2021
 
     const plan = await Tour.aggregate([
       {
         $unwind: '$startDates'
+        // phân giải cấu trúc 1 fiels kiểu array trong từng document
+        // lọc qua từng document tương ứng với từng phần tử của array  : mảng các startDates của document
       },
       {
         $match: {
@@ -159,28 +165,30 @@ exports.getMonthlyPlan = async (req, res) => {
             $gte: new Date(`${year}-01-01`),
             $lte: new Date(`${year}-12-31`)
           }
+          // lọc ngày bắt đầu và ngày bắt đầu và nggayf kết thúc năm trong năm hiện tại
         }
       },
       {
         $group: {
           _id: { $month: '$startDates' },
-          numTourStarts: { $sum: 1 },
-          tours: { $push: '$name' }
+          // nhóm theo từng tháng, $month: lấy ra tháng của ngày đưa vào
+          numTourStarts: { $sum: 1 }, // đếm số lượng tour theo tháng
+          tours: { $push: '$name' } // lấy ra tên tour đẩy vào mảng tours
         }
       },
       {
-        $addFields: { month: '$_id' }
+        $addFields: { month: '$_id' } // thêm fields month: theo _id
       },
       {
         $project: {
-          _id: 0
+          _id: 0 // không hiển thị fields _id, mặc định hiển thị là 1
         }
       },
       {
-        $sort: { numTourStarts: -1 }
+        $sort: { numTourStarts: -1 } // sắp xếp giảm dần theo số lượng tour trong 1 tháng
       },
       {
-        $limit: 12
+        $limit: 12 // giới hạn 12 document
       }
     ]);
 
