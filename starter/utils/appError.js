@@ -5,7 +5,7 @@ class AppError extends Error {
     this.statusCode = statusCode;
     this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
     // nếu statusCode bắt đầu bằng 4 thì trả về status là fail, bắt đầu bàng 5 thì trả về status là error
-    this.isOperational = true;
+    this.isOperational = true; // đặt = true là lỗi do vận hành => lỗi về mạng, hệ thống, người dùng
 
     // ngăn việc khởi tạo AppError chèn vào stack trace khi gọi error.stack() : hiển thị lỗi bắt nguồn từ đâu và đi qua đâu
     Error.captureStackTrace(this, this.constructor);

@@ -1,28 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 
-/*
- //err do validation trả về:
- "errors": {
-  "name": {
-      "name": "ValidatorError",
-      "message": "A tour name must have more or equal then 10 characters",
-      "properties": {
-          "message": "A tour name must have more or equal then 10 characters",
-          "type": "minlength",
-          "minlength": 10,
-          "path": "name",
-          "value": "Test"
-      },
-      "kind": "minlength",
-      "path": "name",
-      "value": "Test"
-  }
-},
-"_message": "Tour validation failed",
-"name": "ValidationError",
-"message": "Tour validation failed: name: A tour name must have more or equal then 10 characters"
-*/
 const tourSchema = new mongoose.Schema(
   {
     name: {

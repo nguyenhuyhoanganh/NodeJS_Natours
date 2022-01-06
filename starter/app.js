@@ -67,7 +67,7 @@ app.all('*', (req, res, next) => {
   // next(err);
 
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-  // đưa error vào next() để khi qua các middlerware khác đến khi tời được middleware handle error, sẽ giữ đc err truyền vào
+  // đưa error vào next() để khi qua các middlerware khác đến khi tới được middleware handle error, sẽ giữ đc err truyền vào
 });
 
 app.use(globalErrorHandler);
