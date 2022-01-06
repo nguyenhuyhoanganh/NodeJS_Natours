@@ -45,9 +45,16 @@ app.delete('/api/v1/tours/:id');
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 
-app.get('/', (req, res) => {
-  res.status(200).json({ mess: 'Hello from server side' });
-});
+// app.get('/', (req, res) => {
+//   res.status(200).json({ mess: 'Hello from server side' });
+// }); // bắt method get
+
+app.all('*', (req, res, next) => {
+  res.status(404).json({
+    status: 'fail',
+    message: `Can't find ${req.originalUrl} on this server!`
+  });
+}); // bắt tất cả method, url còn lại vào 1 middleware trả về 404
 
 // 4) SERVER
 module.exports = app;
