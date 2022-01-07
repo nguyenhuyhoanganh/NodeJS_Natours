@@ -123,7 +123,7 @@ tourSchema.pre('aggregate', function(next) {
 });
 
 const Tour = mongoose.model('Tour', tourSchema);
-
+//'Tour' sẽ đổ thành collection tours trong db
 module.exports = Tour;
 
 /*

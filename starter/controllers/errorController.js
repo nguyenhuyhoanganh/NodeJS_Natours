@@ -3,19 +3,20 @@ const AppError = require('./../utils/appError');
 // 3 loại err của mongoose
 const handleCastErrorDB = err => {
   const message = `Invalid ${err.path}: ${err.value}.`;
+  // path: là tên field , value là giá trị truyền vào route
   return new AppError(message, 400);
 };
 
 const handleDuplicateFieldsDB = err => {
   const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
-  console.log(value);
-
+  // lấy ra chuỗi trùng trong cặp ngoặc kép
+  //console.log(value);
   const message = `Duplicate field value: ${value}. Please use another value!`;
   return new AppError(message, 400);
 };
 const handleValidationErrorDB = err => {
   const errors = Object.values(err.errors).map(el => el.message);
-
+  // Object.value() để lặp qua các properties của object
   const message = `Invalid input data. ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
@@ -65,9 +66,14 @@ module.exports = (err, req, res, next) => {
     let error = { ...err };
 
     if (error.name === 'CastError') error = handleCastErrorDB(error);
+    // khi có 1 value nào đó truyền vào router không thể cast qua được router tương ứng
+    // findById(), findByIdAndUpdate(), findByIdAndDelete()
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
+    // khi khởi tạo 1 documnet có field bị trùng lặp với field được set unique: true
+    // create(), save(),...
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
+    // khi xảy ra lỗi validation trong lúc create, update
 
     sendErrorProd(error, res);
   }
