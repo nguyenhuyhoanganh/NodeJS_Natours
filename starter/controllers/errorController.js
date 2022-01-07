@@ -14,12 +14,19 @@ const handleDuplicateFieldsDB = err => {
   const message = `Duplicate field value: ${value}. Please use another value!`;
   return new AppError(message, 400);
 };
+
 const handleValidationErrorDB = err => {
   const errors = Object.values(err.errors).map(el => el.message);
   // Object.value() để lặp qua các properties của object
   const message = `Invalid input data. ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
+
+const handleJWTError = () =>
+  new AppError('Invalid token. Please log in again!', 401);
+
+const handleJWTExpiredError = () =>
+  new AppError('Your token has expired! Please log in again.', 401);
 
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
@@ -74,6 +81,11 @@ module.exports = (err, req, res, next) => {
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
     // khi xảy ra lỗi validation trong lúc create, update
+
+    if (error.name === 'JsonWebTokenError') error = handleJWTError();
+    // khi không khớp json web token
+    if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
+    // khi token hết hạn
 
     sendErrorProd(error, res);
   }

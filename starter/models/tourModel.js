@@ -69,6 +69,7 @@ const tourSchema = new mongoose.Schema(
     images: [String],
     creatAt: {
       type: Date,
+      // Date nhập vào định dạng yyyy-MM-dd
       default: Date.now(),
       select: false // không cho phép select
     },
