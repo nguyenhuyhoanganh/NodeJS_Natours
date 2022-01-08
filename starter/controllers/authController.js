@@ -20,6 +20,26 @@ const signToken = id => {
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
   // tạo token dựa trên id
+
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+      // trình duyệt sẽ xóa cookie sau khi hết hạn
+    ),
+    httpOnly: true
+    // không thể truy cập hay sửa đổi bởi bất cứ browser nào
+    // cookie sẽ tự động được lưu trữ và được giử cùng mọi request tới server
+  };
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  // secure = true, cookie sẽ chỉ được giử trên 1 kết nối an toàn như HTTPS
+
+  res.cookie('jwt', token, cookieOptions);
+  // gắn cookie và res object
+
+  // Remove password from output
+  user.password = undefined;
+  // tránh việc lấy dữu liệu mật khẩu từ việc signup và login
+
   res.status(statusCode).json({
     status: 'success',
     token,
