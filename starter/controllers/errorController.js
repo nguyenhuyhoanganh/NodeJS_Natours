@@ -50,7 +50,7 @@ const sendErrorProd = (err, res) => {
     // lỗi do bug của dev => giử lỗi chung chung cho clinet, log lỗi ra cho dev biết
   } else {
     // 1) Log error
-    console.error('ERROR 💥', err);
+    console.error('ERROR', err);
 
     // 2) Send generic message
     res.status(500).json({
@@ -70,7 +70,11 @@ module.exports = (err, req, res, next) => {
     sendErrorDev(err, res);
   } else if (process.env.NODE_ENV === 'production') {
     // nếu đang trong quá trình production
-    let error = { ...err };
+    // let error = { ...err };
+    let error = Object.assign(err); // khắc phục tạm thời
+    // mục tiêu của jonas là tạo 1 object err mới rồi thao tác, không ảnh hường đến object cũ
+    // tuy nhiên vì lý do nào đó cách { ...err } không lấy ra được field name ở object err cũ như mong muốn
+    // console.log(error.name, { ...err }.name);
 
     if (error.name === 'CastError') error = handleCastErrorDB(error);
     // khi có 1 value nào đó truyền vào router không thể cast qua được router tương ứng
