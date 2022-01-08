@@ -61,7 +61,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   // 1) GETTING TOKEN AND CHECK OF IT'S THERE: kiểm tra xem có token hay không
   let token;
   // token giử vào header để truy cập route
-  // có dạng authorization : Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ij...
+  // có dạng Authorization : Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ij...
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
@@ -113,3 +113,19 @@ exports.protect = catchAsync(async (req, res, next) => {
   req.user = currentUser;
   next();
 });
+
+// Cách truyền đối số vào 1 middleware fn
+// Tạo ra 1 wrapper fn trả về 1 middleware fn
+// nhận vào mảng roles cho phép truy cập vào route
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // roles ['admin', 'lead-guide']. role='user'
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('You do not have permission to perform this action', 403)
+      );
+    }
+
+    next();
+  };
+};
