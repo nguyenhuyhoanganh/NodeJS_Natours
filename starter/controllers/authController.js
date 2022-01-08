@@ -16,29 +16,17 @@ const signToken = id => {
   // đưa _id vào token giử cho người dùng
 };
 
-// const createSendToken = (user, statusCode, res) => {
-//   const token = signToken(user._id);
-//   const cookieOptions = {
-//     expires: new Date(
-//       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-//     ),
-//     httpOnly: true
-//   };
-//   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-
-//   res.cookie('jwt', token, cookieOptions);
-
-//   // Remove password from output
-//   user.password = undefined;
-
-//   res.status(statusCode).json({
-//     status: 'success',
-//     token,
-//     data: {
-//       user
-//     }
-//   });
-// };
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  // tạo token dựa trên id
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user
+    }
+  });
+};
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // ĐĂNG KÝ, ĐĂNG NHẬP, CUNG CẤP TOKEN JWT ĐỂ DUY TRÌ ĐÂNG NHẬP
 exports.signup = catchAsync(async (req, res, next) => {
@@ -50,13 +38,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     passwordConfirm: req.body.passwordConfirm
   });
 
-  const token = signToken(newUser._id);
-
-  res.status(201).json({
-    status: 'success',
-    token,
-    data: { user: newUser }
-  });
+  createSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -78,12 +60,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // 3) If everything ok, send token to client
-  const token = signToken(user._id);
-
-  res.status(201).json({
-    status: 'success',
-    token
-  });
+  createSendToken(user, 200, res);
 });
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //YÊU CẦU ĐĂNG NHẬP VÀ PHÂN QUYỀN
@@ -245,11 +222,32 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   // 4) Log the user in, send JWT
   // giử lại token JWT cho user có thể đăng nhập
-  const token = signToken(user._id);
+  createSendToken(user, 200, res);
+});
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//THAY ĐỔI MẬT KHẨU
 
-  res.status(201).json({
-    status: 'success',
-    token
-  });
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // 1) Get user from collection
+  // lấy ra user cùng password
+  const user = await User.findById(req.user.id).select('+password');
+
+  // 2) Check if POSTed current password is correct
+  // so sánh password hiện tại với passwordCurrent lấy ở request
+  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+    return next(new AppError('Your current password is wrong.', 401));
+  }
+
+  // 3) If so, update password
+  // update password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
+  // không được sửu dụng bất cứ phương pháp update nào vì sẽ không nhận validate khai báo trong passwordConfirm
+  // đồng thời sẽ không thực thi qua middlware save đã xây dựng trước đó
+  // User.findByIdAndUpdate will NOT work as intended!
+
+  // 4) Log user in, send JWT
+  createSendToken(user, 200, res);
 });
 /////////////////////////////////////////////////////////////////////////////////////////////////////
