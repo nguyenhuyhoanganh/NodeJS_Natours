@@ -1,11 +1,14 @@
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 const sendEmail = require('./../utils/email');
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// TẠO TOKEN KHI ĐĂNG NHẬP
 const signToken = id => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
@@ -13,6 +16,31 @@ const signToken = id => {
   // đưa _id vào token giử cho người dùng
 };
 
+// const createSendToken = (user, statusCode, res) => {
+//   const token = signToken(user._id);
+//   const cookieOptions = {
+//     expires: new Date(
+//       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+//     ),
+//     httpOnly: true
+//   };
+//   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+//   res.cookie('jwt', token, cookieOptions);
+
+//   // Remove password from output
+//   user.password = undefined;
+
+//   res.status(statusCode).json({
+//     status: 'success',
+//     token,
+//     data: {
+//       user
+//     }
+//   });
+// };
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// ĐĂNG KÝ, ĐĂNG NHẬP, CUNG CẤP TOKEN JWT ĐỂ DUY TRÌ ĐÂNG NHẬP
 exports.signup = catchAsync(async (req, res, next) => {
   // const newUser = await User.create(req.body);
   const newUser = await User.create({
@@ -57,7 +85,8 @@ exports.login = catchAsync(async (req, res, next) => {
     token
   });
 });
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//YÊU CẦU ĐĂNG NHẬP VÀ PHÂN QUYỀN
 exports.protect = catchAsync(async (req, res, next) => {
   // 1) GETTING TOKEN AND CHECK OF IT'S THERE: kiểm tra xem có token hay không
   let token;
@@ -130,6 +159,8 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// QUÊN MẬT KHẨU, GIỬ EMAIL KÈM TOKEN ĐÊ CHO PHÉP ĐỔI MẬT KHẨU
 
 //B1: tìm user khớp vơi email trong csdl
 //B2A: tạo ra 1 token random giử cho người dùng
@@ -186,25 +217,39 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
-  // // 1) Get user based on the token
-  // const hashedToken = crypto
-  //   .createHash('sha256')
-  //   .update(req.params.token)
-  //   .digest('hex');
-  // const user = await User.findOne({
-  //   passwordResetToken: hashedToken,
-  //   passwordResetExpires: { $gt: Date.now() }
-  // });
-  // // 2) If token has not expired, and there is user, set the new password
-  // if (!user) {
-  //   return next(new AppError('Token is invalid or has expired', 400));
-  // }
-  // user.password = req.body.password;
-  // user.passwordConfirm = req.body.passwordConfirm;
-  // user.passwordResetToken = undefined;
-  // user.passwordResetExpires = undefined;
-  // await user.save();
-  // // 3) Update changedPasswordAt property for the user
-  // // 4) Log the user in, send JWT
-  // createSendToken(user, 200, res);
+  // 1) Get user based on the token
+  // lấy token trong url ra mã hóa và so sánh với database
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+  // tìm kiếm user chung mã token đã mã hóa nhưng thời gian hạn dài hơn hiện tại
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() }
+  });
+
+  // 2) If token has not expired, and there is user, set the new password
+  if (!user) {
+    return next(new AppError('Token is invalid or has expired', 400));
+  }
+  // lưu user với mật khẩu mới, không được dùng upadate về sẽ bỏ qua validate
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  // 3) Update changedPasswordAt property for the user
+  // tự động bằng middleware ở userModel
+
+  // 4) Log the user in, send JWT
+  // giử lại token JWT cho user có thể đăng nhập
+  const token = signToken(user._id);
+
+  res.status(201).json({
+    status: 'success',
+    token
+  });
 });
+/////////////////////////////////////////////////////////////////////////////////////////////////////

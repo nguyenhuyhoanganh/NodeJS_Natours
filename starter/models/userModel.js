@@ -50,6 +50,8 @@ const userSchema = new mongoose.Schema({
     select: false
   }
 });
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// MÃ HÓA MẬT KHẨU KHI TRƯỚC SAVE, TỰ ĐỘNG THÊM FIELD passwordChangedAt KHI UPDATE MẬT KHẨU BẲNG SAVE
 
 userSchema.pre('save', async function(next) {
   // Only run this function if password was actually modified
@@ -62,6 +64,20 @@ userSchema.pre('save', async function(next) {
   this.passwordConfirm = undefined;
   next();
 });
+
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password') || this.isNew) return next();
+  // nếu mật khẩu chưa được thay đổi hoặc đang tạo mới object thì chuyển sang middleware sau
+
+  this.passwordChangedAt = Date.now() - 1000;
+  // thời gian - 1s để tránh khả năng phát hành mã jwt đăng nhập trước khi tạo field trong csdl
+  next();
+});
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// 1) SO SÁNH MÂT KHẨU ĐỂ ĐĂNG NHẬP
+// 2) SO SÁNH THỜI GIAN ĐỔI MẬT KHẨU VỚI THỜI GIAN TẠO TOKEN JWT ĐĂNG NHẬP
+// 3) TẠO TOKEN CRYTO GIỬ CHO KHÁCH HÀNG ĐỂ ĐỔI MẬT KHẨU
 
 // instace method, tồn tại trên toàn bộ documents của collection
 // so sánh password người dùng nhập vào với password trên document
