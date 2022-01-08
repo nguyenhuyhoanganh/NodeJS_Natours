@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
+const sendEmail = require('./../utils/email');
 
 const signToken = id => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -129,3 +130,81 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+
+//B1: tìm user khớp vơi email trong csdl
+//B2A: tạo ra 1 token random giử cho người dùng
+//B2B: sử dụng token random đó thực hiện mã hóa và gán vào field passwordResetToken trong csdl
+//B2C: đặt thời gian hết hạn toke là 10 phút
+//B3: giử token đó cho user thiết lập ở ./../utils/email.js
+// (khi user nhận được token random, giử lại token đó về hệ thống, hệ thống tiến hành mã hóa lần nữa và so sánh với field passwordResetToken trong csdl
+//  nếu token khớp nhau sẽ cho phép user đổi mật khẩu)
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+  // 1) Get user based on POSTed email
+  const user = await User.findOne({ email: req.body.email });
+  // tìm user theo email cung cấp
+  if (!user) {
+    // nếu không có user trả về error
+    return next(new AppError('There is no user with email address.', 404));
+  }
+
+  // 2) Generate the random reset token
+  const resetToken = user.createPasswordResetToken();
+  // save bỏ qua validate, không cần đưa đầy đủ user để save
+  // trong user.createPasswordResetToken() đã gán thuộc tính passwordResetToken và passwordResetExpires cho user
+  // save() ở controller để lưu passwordResetToken và passwordResetExpires vào csdl
+  await user.save({ validateBeforeSave: false });
+
+  // 3) Send it to user's email
+  const resetURL = `${req.protocol}://${req.get(
+    'host'
+  )}/api/v1/users/resetPassword/${resetToken}`;
+
+  const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Your password reset token (valid for 10 min)',
+      message
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Token sent to email!'
+    });
+  } catch (err) {
+    // bắt trường hợp senEmail thất bại, hủy trường passwordResetToken và passwordResetExpires của user
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again later!'),
+      500
+    );
+  }
+});
+
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  // // 1) Get user based on the token
+  // const hashedToken = crypto
+  //   .createHash('sha256')
+  //   .update(req.params.token)
+  //   .digest('hex');
+  // const user = await User.findOne({
+  //   passwordResetToken: hashedToken,
+  //   passwordResetExpires: { $gt: Date.now() }
+  // });
+  // // 2) If token has not expired, and there is user, set the new password
+  // if (!user) {
+  //   return next(new AppError('Token is invalid or has expired', 400));
+  // }
+  // user.password = req.body.password;
+  // user.passwordConfirm = req.body.passwordConfirm;
+  // user.passwordResetToken = undefined;
+  // user.passwordResetExpires = undefined;
+  // await user.save();
+  // // 3) Update changedPasswordAt property for the user
+  // // 4) Log the user in, send JWT
+  // createSendToken(user, 200, res);
+});

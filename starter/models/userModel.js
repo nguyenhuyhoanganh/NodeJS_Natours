@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -40,7 +41,9 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   // thời gian thay đổi password, dùng để so sánh với thời gian tạo token
   passwordResetToken: String,
+  // token dùng để reset lại mật khẩu
   passwordResetExpires: Date,
+  // thời gian token có hiệu lực
   active: {
     type: Boolean,
     default: true,
@@ -87,6 +90,23 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
 
   // False means NOT changed
   return false;
+};
+
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  // token này sẽ giửu đi cho user
+
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  // mã hóa token giử đi thành 1 field trong csdl để so sánh với token nhận về
+  console.log({ resetToken }, this.passwordResetToken);
+
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  // đặt thời gian hết hạn token là 10 phút
+
+  return resetToken;
 };
 
 const User = mongoose.model('User', userSchema);
