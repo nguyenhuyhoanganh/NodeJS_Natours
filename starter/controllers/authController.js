@@ -31,6 +31,7 @@ const createSendToken = (user, statusCode, res) => {
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // ĐĂNG KÝ, ĐĂNG NHẬP, CUNG CẤP TOKEN JWT ĐỂ DUY TRÌ ĐÂNG NHẬP
 exports.signup = catchAsync(async (req, res, next) => {
+  // nếu đăng ký 1 người dùng đã tồn tại như trùng email sẽ bị validate
   // const newUser = await User.create(req.body);
   const newUser = await User.create({
     name: req.body.name,

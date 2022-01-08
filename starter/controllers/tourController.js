@@ -62,7 +62,9 @@ exports.updateTour = catchAsync(async (req, res, next) => {
     runValidators: true
   });
   // new : true là 1 options thêm vào để sau khi update trả về 1 document mới được thêm vào
-  // runValidators: true để bật xác thực khi update
+  // runValidators: true để bật xác thực khi update chỉ cho nhưng field thay đổi
+  // tuy nhiên nếu là validate: {validator: fn()} thêm vào từng field, ở tourModel có priceDiscount thì sẽ bỏ qua validate này
+
   if (!tour) {
     return next(new AppError('No tour found with that ID', 404));
   }

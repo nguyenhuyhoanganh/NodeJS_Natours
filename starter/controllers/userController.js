@@ -70,6 +70,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 
   // 2) Filtered out unwanted fields names that are not allowed to be updated
   const filteredBody = filterObj(req.body, 'name', 'email');
+  // có thể thêm fields muốn thay đổi: image, ...
   // lọc không cho cập nhật role, ...
 
   // 3) Update user document
@@ -85,5 +86,15 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     data: {
       user: updatedUser
     }
+  });
+});
+
+// không thực sự xóa người dùng khỏi csdl thay vào đó đặt active: false
+exports.deleteMe = catchAsync(async (req, res, next) => {
+  await User.findByIdAndUpdate(req.user.id, { active: false });
+
+  res.status(204).json({
+    status: 'success',
+    data: null
   });
 });

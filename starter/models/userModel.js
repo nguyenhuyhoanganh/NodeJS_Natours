@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema({
     minlength: 8,
     select: false
   },
+  // password để select là false
+  // khi .save(), cần lấy ra tất cả fields của user bằng .findById() rồi mới update
+  // nhưng .findById() không thể lấy ra trường password => cần .select('+password') để bổ sung field này vào user
+  // nếu chỉ đổi mật khẩu thì không cần .select('+password')
   passwordConfirm: {
     type: String,
     required: [true, 'Please comfirm your password'],
@@ -43,14 +47,16 @@ const userSchema = new mongoose.Schema({
   passwordResetToken: String,
   // token dùng để reset lại mật khẩu
   passwordResetExpires: Date,
-  // thời gian token có hiệu lực
+  // thời gian token để reset mật khẩu có hiệu lực
   active: {
     type: Boolean,
     default: true,
     select: false
   }
+  // dùng để đánh dấu user xóa tài khoản
 });
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+// QUERY MIDDLEWARE
 // MÃ HÓA MẬT KHẨU KHI TRƯỚC SAVE, TỰ ĐỘNG THÊM FIELD passwordChangedAt KHI UPDATE MẬT KHẨU BẲNG SAVE
 
 userSchema.pre('save', async function(next) {
@@ -74,7 +80,15 @@ userSchema.pre('save', function(next) {
   next();
 });
 
+// CHẶN TÌM KIẾM NGƯỜI DÙNG ĐÃ XÓA TÀI KHOẢN => VÔ HIỆU HÓA LUÔN GETALL(), GETONE(), LOGIN()
+userSchema.pre(/^find/, function(next) {
+  // this points to the current query
+  this.find({ active: { $ne: false } });
+  next();
+});
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+// METHODS
 // 1) SO SÁNH MÂT KHẨU ĐỂ ĐĂNG NHẬP
 // 2) SO SÁNH THỜI GIAN ĐỔI MẬT KHẨU VỚI THỜI GIAN TẠO TOKEN JWT ĐĂNG NHẬP
 // 3) TẠO TOKEN CRYTO GIỬ CHO KHÁCH HÀNG ĐỂ ĐỔI MẬT KHẨU

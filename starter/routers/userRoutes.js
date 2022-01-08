@@ -4,6 +4,8 @@ const authController = require('./../controllers/authController');
 
 const router = express.Router();
 
+//authController.protect : bắt buộc người dùng phải đăng nhập để có quyền truy cập route
+
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 
@@ -17,7 +19,7 @@ router.patch(
 );
 
 router.patch('/updateMe', authController.protect, userController.updateMe);
-// router.delete('/deleteMe', authController.protect, userController.deleteMe);
+router.delete('/deleteMe', authController.protect, userController.deleteMe);
 
 router
   .route('/')
