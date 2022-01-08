@@ -16,6 +16,7 @@ const signToken = id => {
   // đưa _id vào token giử cho người dùng
 };
 
+// GIỬ TOKEN KHI LOGIN, SIGNUP, RESETPASSWORD, UPDATEPASSWORD
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
   // tạo token dựa trên id
@@ -37,6 +38,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm
   });
+  // loại bỏ khi thêm các thông tin về role, ...
 
   createSendToken(newUser, 201, res);
 });
