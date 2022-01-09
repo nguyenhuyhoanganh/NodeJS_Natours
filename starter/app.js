@@ -1,6 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routers/tourRoutes');
@@ -10,6 +11,10 @@ const AppError = require('./utils/appError');
 const app = express();
 
 // 1) MIDDLE WARE : res -> thực thi qua lần lượt middleware, trả về response
+
+// Set security HTTP headers: bảo mật headers
+app.use(helmet());
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
   // log request
@@ -25,13 +30,15 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-app.use(express.json());
-//cho phép chỉnh sửa 1 request được giử đến
+//cho phép nhận object request giử đến dưới dạng json và thao tác trên object đó để trả về dữ liệu
+// Body-parser: đọc dữu liệu từ request.body
+// đưa 1 option limit: '10kb': giới hạn nhận dữ liệu ở body dưới 10kb
+app.use(express.json({ limit: '10kb' }));
 
-app.use(express.static(`${__dirname}/public`));
 //cho phép truy cập đến những file static qua path trên browser
 //khi truy cập url mà không tìm thấy router đã config trước sẽ tự động coi ${__dirname}/public là root,
 //cho phép truy cập đến các file static bên trong public từ 127.0.0.1:3000
+app.use(express.static(`${__dirname}/public`));
 
 // sử dụng middleware app.use()
 // app.use() cho truy cập 3 tham số: req, res và nextfunction(là fn middleware tiếp theo)
