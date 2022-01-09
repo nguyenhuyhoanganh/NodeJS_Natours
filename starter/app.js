@@ -2,6 +2,9 @@ const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
 
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routers/tourRoutes');
@@ -32,8 +35,34 @@ app.use('/api', limiter);
 
 //cho phép nhận object request giử đến dưới dạng json và thao tác trên object đó để trả về dữ liệu
 // Body-parser: đọc dữu liệu từ request.body
-// đưa 1 option limit: '10kb': giới hạn nhận dữ liệu ở body dưới 10kb
+// đưa 1 option limit: '10kb': giới hạn nhận dữ  liệu ở body dưới 10kb
 app.use(express.json({ limit: '10kb' }));
+
+// Data sanitization against NoSQL query injection
+// lọc data giử vào req.body khỏi câu lệnh NoSQL injection
+// ví dụ đưa { "$gt" : "" } vào làm tên đăng nhập tahy email, sẽ chạy lệnh NoSQL và cho phép cung cấp token đột nhập hệ thống
+app.use(mongoSanitize()); // kiểm tra req.body, req.param, req.query lọc tất cả ký hiệu $,.,...
+
+// Data sanitization against XSS
+// lọc data khỏi tấn công XSS: lọc đoạn mã html có chèn mã js độc hại, chuyển mã html sang mã không độc
+app.use(xss());
+
+// Prevent parameter pollution
+// loại bỏ ô nhiễm tham só truyền vào query trên url
+// như chống lặp lại các tử sort, page, limit,... trên query
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsQuantity',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price'
+    ]
+    // cho phép lặp lại các từ trên list này ở url
+  })
+);
 
 //cho phép truy cập đến những file static qua path trên browser
 //khi truy cập url mà không tìm thấy router đã config trước sẽ tự động coi ${__dirname}/public là root,
