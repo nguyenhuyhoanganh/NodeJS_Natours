@@ -1,5 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routers/tourRoutes');
@@ -11,8 +12,18 @@ const app = express();
 // 1) MIDDLE WARE : res -> thực thi qua lần lượt middleware, trả về response
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
+  // log request
 }
-// logger
+
+// Limit requests from same API
+// Giới hạn số lần giử request từ 1 IP
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  // 100 request trong 1 giờ
+  message: 'Too many requests from this IP, please try again in an hour!'
+});
+app.use('/api', limiter);
 
 app.use(express.json());
 //cho phép chỉnh sửa 1 request được giử đến
