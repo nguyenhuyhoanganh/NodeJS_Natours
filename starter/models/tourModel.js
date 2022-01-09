@@ -77,7 +77,38 @@ const tourSchema = new mongoose.Schema(
     secretTour: {
       type: Boolean,
       default: false
-    }
+    },
+    startLocation: {
+      // GeoJSON: Mongo sử dụng GeoJSON để định dạng dữ liệu không gian địa lý
+      // ít nhất phải có 2 fields chỉ định type (gồm 1 số option với định dạnh point, ...) và coordinates chỉ định tọa độ
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point']
+        // định dạng type cho GeoJSON, có thể là point, polygons, lines
+        // ở đây sẽ dùng point
+      },
+      coordinates: [Number],
+      // 1 mảng định dạng tọa độ của GeoJSON: kinh độ:  longitude và vĩ độ: latitude
+      // khác với định dạng của google map là latitude trước, longitude sau
+
+      address: String,
+      description: String
+    },
+    // Nhúng data set location vào tour là 1 mảng các point
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point']
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number
+      }
+    ]
   },
   {
     toJSON: { virtuals: true }, // virtual properties xuất ra dưới dạng JSON
