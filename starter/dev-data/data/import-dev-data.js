@@ -1,17 +1,17 @@
+const fs = require('fs');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const Tour = require('./../../models/tourModel');
+const Review = require('./../../models/reviewModel');
+const User = require('./../../models/userModel');
 
 dotenv.config({ path: './config.env' });
-
-const fs = require('fs');
-const Tour = require('./../../models/tourModel');
-
-// chỉ cần config path 1 lần của thể dùng các evironment variable ở mọi nơi
 
 const DB = process.env.DATABASE.replace(
   '<PASSWORD>',
   process.env.DATABASE_PASSWORD
 );
+
 mongoose
   .connect(DB, {
     useNewUrlParser: true,
@@ -22,17 +22,18 @@ mongoose
   .then(() => console.log('DB connection successful!'));
 
 // READ JSON FILE
-const tours = JSON.parse(
-  // sesion 1->10
-  // fs.readFileSync(`${__dirname}/tours-simple.json`, 'utf-8')
-  // session 11
-  fs.readFileSync(`${__dirname}/tours.json`, 'utf-8')
+const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`, 'utf-8'));
+const users = JSON.parse(fs.readFileSync(`${__dirname}/users.json`, 'utf-8'));
+const reviews = JSON.parse(
+  fs.readFileSync(`${__dirname}/reviews.json`, 'utf-8')
 );
 
 // IMPORT DATA INTO DB
 const importData = async () => {
   try {
     await Tour.create(tours);
+    await User.create(users, { validateBeforeSave: false });
+    await Review.create(reviews);
     console.log('Data successfully loaded!');
   } catch (err) {
     console.log(err);
@@ -40,22 +41,19 @@ const importData = async () => {
   process.exit();
 };
 
-// DELETE ALL DATA DROM DB
+// DELETE ALL DATA FROM DB
 const deleteData = async () => {
   try {
     await Tour.deleteMany();
+    await User.deleteMany();
+    await Review.deleteMany();
     console.log('Data successfully deleted!');
   } catch (err) {
     console.log(err);
   }
   process.exit();
-  // ngừng thực thi ctrinh
 };
 
-// process.argv trả về 1 mảng
-// phần tử đầu là node tên đường dẫn đến file
-// phần tử thứ 2 là tên đường dẫn trực tiếp đến file
-// phần tửu thứu 3 là hậu tố truyền vào đuôi như --import
 if (process.argv[2] === '--import') {
   // node .\dev-data\data\import-dev-data.js --import
   importData();
@@ -63,5 +61,3 @@ if (process.argv[2] === '--import') {
   // node .\dev-data\data\import-dev-data.js --delete
   deleteData();
 }
-
-// node
