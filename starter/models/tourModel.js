@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 
+// const User = require('./userModel');
+
 const tourSchema = new mongoose.Schema(
   {
     name: {
@@ -108,6 +110,16 @@ const tourSchema = new mongoose.Schema(
         description: String,
         day: Number
       }
+    ],
+    // tham chiếu Child Referencing tới user
+    // đưa 1 mảng _id vào guides, khi save trong mongodb sẽ là kiểu ObjectId
+    guides: [
+      {
+        // kiểu ObjectId
+        type: mongoose.Schema.ObjectId,
+        // chỉ định tham chiếu tới User
+        ref: 'User'
+      }
     ]
   },
   {
@@ -115,7 +127,7 @@ const tourSchema = new mongoose.Schema(
     toObject: { virtuals: true } // dữ liệu được xuất như 1 Object
   }
 );
-// thêm option thứ 2 vào mongoose.Schema() để hiển thị ra
+// thêm option thứ 2 vào mongoose.Schema() để hiển thị ra virtual properties
 
 tourSchema.virtual('durationWeek').get(function() {
   return this.duration / 7;
@@ -126,6 +138,18 @@ tourSchema.pre('save', function(next) {
   this.slug = slugify(this.name, { lower: true });
   next(); // cần được gọi ra nếu có 2 middlewares chèn vào trc 1 event
 });
+
+/*
+// CÁCH NHÚNG CẢ USER VÀO TOUR
+guides: Array, // Thêm ở schema tour, là 1 mảng object
+// khi đưa vào body chỉ 1 mảng các _id của user, trước khi save sẽ đưa cả user vào tour
+tourSchema.pre('save', async function(next) {
+  // findById là hàm bất đồng bộ => phải sử dụng promise.all()
+  const guidesPromise = this.guides.map(async id => await User.findById(id));
+  this.guides = Promise.all(guidesPromise);
+  next();
+});
+*/
 
 // QUERY MIDDLEWARE
 // tourSchema.pre('find', function(next) {
@@ -174,4 +198,4 @@ testTour
     console.log(doc);
   })
   .catch(err => console.error(err));
-  */
+*/
