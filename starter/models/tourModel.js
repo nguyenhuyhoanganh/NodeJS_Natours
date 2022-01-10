@@ -133,6 +133,19 @@ tourSchema.virtual('durationWeek').get(function() {
   return this.duration / 7;
 }); // virtual properties sẽ được thêm mỗi khi dùng phương thức GET
 
+// Virtual populate
+// mục đích không muốn thêm 1 mảng id reviews phát tiền vô hạn trong tour trên db
+tourSchema.virtual('reviews', {
+  // chỉ định bảng tham chiếu
+  ref: 'Review',
+  // chỉ định field tham chiếu tới trong bảng được tham chiếu
+  // ở Review sẽ là field: tour
+  foreignField: 'tour',
+  // field được tham chiếu trong model hiện tại
+  // ở Tour là: _id
+  localField: '_id'
+});
+
 // DOCUMENT MIDDLEWARE: runs before .save() and .create(), not insertMany
 tourSchema.pre('save', function(next) {
   this.slug = slugify(this.name, { lower: true });

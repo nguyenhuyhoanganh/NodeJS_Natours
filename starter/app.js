@@ -7,8 +7,9 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 
 const globalErrorHandler = require('./controllers/errorController');
-const tourRouter = require('./routers/tourRoutes');
-const userRouter = require('./routers/userRoutes');
+const tourRouter = require('./routes/tourRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
+const userRouter = require('./routes/userRoutes');
 const AppError = require('./utils/appError');
 
 const app = express();
@@ -94,6 +95,7 @@ app.delete('/api/v1/tours/:id');
 //mounting the routers
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 // app.get('/', (req, res) => {
 //   res.status(200).json({ mess: 'Hello from server side' });

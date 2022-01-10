@@ -34,5 +34,13 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+reviewSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: 'user',
+    select: 'name photo'
+  });
+  // data về tour được lấy đi kèm với tour
+  next();
+});
 const Review = mongoose.model('Review', reviewSchema);
 module.exports = Review;
