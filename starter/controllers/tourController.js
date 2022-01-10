@@ -32,8 +32,15 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
 });
 
 exports.getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id);
-  //Tour.findOne({ _id: req.params.id })
+  const tour = await Tour.findById(req.params.id).populate({
+    path: 'guides',
+    // chỉ định field tham chiếu dữ liệu
+    select: '-__v -passwordChangedAt'
+    // loại bỏ field của bảng tham chiếu không muốn xuất hiện
+  });
+  // .populate('guides') lấp đầy field guides bằng dữ liệu được tham chiếu tới
+  // .populate vẫn sẽ tạo 1 query mới => ảnh hưởng đến hiệu suất
+  // Tour.findOne({ _id: req.params.id })
   if (!tour) {
     return next(new AppError('No tour found with that ID', 404));
   }
