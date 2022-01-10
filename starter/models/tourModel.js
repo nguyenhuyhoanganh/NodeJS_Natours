@@ -162,6 +162,18 @@ tourSchema.pre(/^find/, function(next) {
   next();
 });
 
+tourSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: 'guides',
+    // chỉ định field tham chiếu dữ liệu
+    select: '-__v -passwordChangedAt'
+    // loại bỏ field của bảng tham chiếu không muốn xuất hiện
+  });
+  // .populate('guides') lấp đầy field guides bằng dữ liệu được tham chiếu tới
+  // .populate vẫn sẽ tạo 1 query mới => ảnh hưởng đến hiệu suất
+  next();
+});
+
 tourSchema.post(/^find/, function(docs, next) {
   console.log(`Query took ${Date.now() - this.start} milliseconds!`);
   // tính thời gian query
