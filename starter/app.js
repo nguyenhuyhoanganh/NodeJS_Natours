@@ -7,9 +7,9 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 
 const globalErrorHandler = require('./controllers/errorController');
-const tourRouter = require('./routes/tourRoutes');
-const reviewRouter = require('./routes/reviewRoutes');
-const userRouter = require('./routes/userRoutes');
+const tourRouter = require('./routers/tourRoutes');
+const reviewRouter = require('./routers/reviewRoutes');
+const userRouter = require('./routers/userRoutes');
 const AppError = require('./utils/appError');
 
 const app = express();

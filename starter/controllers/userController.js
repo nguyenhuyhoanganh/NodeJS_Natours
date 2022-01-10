@@ -1,6 +1,7 @@
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
+const factory = require('./handlerFactory');
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Lọc req.body lấy ra các fields cho phép giử vào update
@@ -15,53 +16,33 @@ const filterObj = (obj, ...allowedFields) => {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //ADMIN
-exports.getAllUsers = catchAsync(async (req, res, next) => {
-  // EXCUTE QUERY
-  const users = await User.find();
-
-  // SEND RESPONSE
-  res.status(200).json({
-    status: 'success',
-    results: users.length,
-    data: { users }
-  });
-});
-
-exports.getUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined!'
-  });
-};
+exports.getUser = factory.getOne(User);
+exports.getAllUsers = factory.getAll(User);
+// Do NOT update passwords with updateUser!
+exports.updateUser = factory.updateOne(User);
+exports.deleteUser = factory.deleteOne(User);
 
 exports.createUser = (req, res) => {
   res.status(500).json({
     status: 'error',
-    message: 'this route is not yet defined!'
-  });
-};
-
-exports.updateUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined!'
-  });
-};
-
-exports.deleteUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined!'
+    message: 'This route is not defined! Please use /signup instead.'
   });
 };
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 //USER
+// middleware cho phép người dùng truy vấn thông tin của chính mình
+exports.getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
+};
+
+// chức năng cho người dùng cập nhật name, email
 exports.updateMe = catchAsync(async (req, res, next) => {
   // 1) Create error if user POSTs password data
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
-        'This route is not for password updates. Please use /updateMyPassword.',
+        'This route is not for password updates. Please use /updateMyPassword instead.',
         400
       )
     );
@@ -89,6 +70,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   });
 });
 
+// chức năng cho người dùng tự xóa tài khoản
 // không thực sự xóa người dùng khỏi csdl thay vào đó đặt active: false
 exports.deleteMe = catchAsync(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user.id, { active: false });
