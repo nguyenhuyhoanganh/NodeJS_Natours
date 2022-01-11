@@ -126,9 +126,15 @@ const tourSchema = new mongoose.Schema(
     toJSON: { virtuals: true }, // virtual properties xuất ra dưới dạng JSON
     toObject: { virtuals: true } // dữ liệu được xuất như 1 Object
   }
+  // thêm option thứ 2 vào mongoose.Schema() để hiển thị ra virtual properties
 );
-// thêm option thứ 2 vào mongoose.Schema() để hiển thị ra virtual properties
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//INDEXES
+tourSchema.index({ slug: 1 });
+// đánh chỉ mục cho slug, giúp truy vấn với slug nhanh hơn nhưng tốn bộ nhớ hơn
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// VIRTUAL PROPERTIES
 tourSchema.virtual('durationWeek').get(function() {
   return this.duration / 7;
 }); // virtual properties sẽ được thêm mỗi khi dùng phương thức GET
@@ -145,7 +151,7 @@ tourSchema.virtual('reviews', {
   // ở Tour là: _id
   localField: '_id'
 });
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 // DOCUMENT MIDDLEWARE: runs before .save() and .create(), not insertMany
 tourSchema.pre('save', function(next) {
   this.slug = slugify(this.name, { lower: true });
@@ -163,7 +169,7 @@ tourSchema.pre('save', async function(next) {
   next();
 });
 */
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 // QUERY MIDDLEWARE
 // tourSchema.pre('find', function(next) {
 tourSchema.pre(/^find/, function(next) {
@@ -193,6 +199,7 @@ tourSchema.post(/^find/, function(docs, next) {
   next();
 });
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 // AGGREGATION MIDDLEWARE
 tourSchema.pre('aggregate', function(next) {
   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
@@ -202,7 +209,7 @@ tourSchema.pre('aggregate', function(next) {
   console.log(this.pipeline());
   next();
 });
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 const Tour = mongoose.model('Tour', tourSchema);
 //'Tour' sẽ đổ thành collection tours trong db
 module.exports = Tour;

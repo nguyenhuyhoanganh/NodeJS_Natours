@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Tour = require('./tourModel');
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -34,6 +35,7 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+// QUERY MIDDLEWARE
 reviewSchema.pre(/^find/, function(next) {
   this.populate({
     path: 'user',
@@ -42,5 +44,79 @@ reviewSchema.pre(/^find/, function(next) {
   // data về tour được lấy đi kèm với tour
   next();
 });
+
+// STATIC METHODS: gắn kèm với model không phải cho từng document
+reviewSchema.statics.calcAverageRatings = async function(tourId) {
+  // this trỏ đến model hiện tại
+  const stats = await this.aggregate([
+    {
+      $match: { tour: tourId }
+      // lọc qua tour cùng id
+    },
+    {
+      $group: {
+        _id: '$tour',
+        // nhóm các review có cùng field tour
+        nRating: { $sum: 1 },
+        // tính tổng số lượt rating
+        avgRating: { $avg: '$rating' }
+        // tính trung bình rating
+      }
+    }
+  ]);
+  // console.log(stats);
+
+  // cập nhật tour tương ứng
+  if (stats.length > 0) {
+    // chỉ thực thi nếu có review => stats là mảng không rỗng
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: stats[0].nRating,
+      ratingsAverage: stats[0].avgRating
+    });
+  } else {
+    await Tour.findByIdAndUpdate(tourId, {
+      // đặt về deafault nếu không có review nào
+      ratingsQuantity: 0,
+      ratingsAverage: 4.5
+    });
+  }
+};
+// cần thực hiện sau khi save, create, update, delete => sử dụng post hook
+
+// DOCUMENT MIDDLEWARE
+// gọi calcAverageRatings sau khi save, dùng post
+reviewSchema.post('save', function() {
+  // this points to current review
+  // this trỏ đến chính document sắp được save
+  // không thể gọi trực tiếp Review.calcAverageRatings(this.tour)
+  // bới vì Review được khai báo sau, mà thứ tự thực thi các middleware ở schema là lần lượt
+  // => sử dụng this.constructor để trỏ đến chính Model
+  this.constructor.calcAverageRatings(this.tour);
+});
+
+// QUERY MIDDLEWARE
+// findByIdAndUpdate : chính là findOneAndUpdate với Id hiện tại
+// findByIdAndDelete : chính là findOneAndDelete với Id hiện tại
+// với query middleware, this không trỏ đến documnet hay đến model mà trỏ đến query
+reviewSchema.pre(/^findOneAnd/, async function(next) {
+  // this.findOne() thực thi luôn truy vấn và trả về document đang được thực thi
+  // lưu documnet này vào this.r, this.r vẫn là document trước khi update hoặc delete
+  // nhưng chỉ cần quan tâm đến field tour lấy ra tourId để thực hiện calcAverageRatings
+  // và việc update hay delete không ảnh hưởng đến field tourId
+  this.r = await this.findOne();
+  // console.log(this.r);
+  next();
+});
+
+reviewSchema.post(/^findOneAnd/, async function(result) {
+  // await this.findOne(); does NOT work here, query has already executed
+  // this.r là document đã thực thi, => từ document này .contructor sẽ trỏ đến model và gọi được static method
+  await this.r.constructor.calcAverageRatings(this.r.tour);
+
+  // await result.constructor.calcAverageRatings(result.tour);
+  // thực ra post của query middleware vẫn nhận vào tham số result là document trả về của findOne()
+  // vẫn lấy ra model từ documnet đó bằng cách result.constructor, nhưng k hiểu sao Jonas không dùng ???
+});
+
 const Review = mongoose.model('Review', reviewSchema);
 module.exports = Review;

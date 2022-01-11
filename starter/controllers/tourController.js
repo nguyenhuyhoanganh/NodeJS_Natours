@@ -23,7 +23,7 @@ exports.getTourStats = catchAsync(async (req, res, next) => {
     },
     {
       $group: {
-        _id: { $toUpper: '$difficulty' }, // nhóm theo tên độ khó, đặt id của từng group = ký tự viết hoa tên đọ khó
+        _id: { $toUpper: '$difficulty' }, // nhóm theo tên độ khó, đặt id của từng group = ký tự viết hoa tên độ khó
         // tính toán thông tin của từng group
         numTours: { $sum: 1 }, // +1 khi lọc qua mỗi document => lấy ra số lượng
         numRatings: { $sum: '$ratingsQuantity' },

@@ -56,7 +56,7 @@ const userSchema = new mongoose.Schema({
   // dùng để đánh dấu user xóa tài khoản
 });
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-// QUERY MIDDLEWARE
+// DOCUMENT MIDDLEWARE
 // MÃ HÓA MẬT KHẨU KHI TRƯỚC SAVE, TỰ ĐỘNG THÊM FIELD passwordChangedAt KHI UPDATE MẬT KHẨU BẲNG SAVE
 
 userSchema.pre('save', async function(next) {
@@ -80,6 +80,7 @@ userSchema.pre('save', function(next) {
   next();
 });
 
+// QUERY MIDDLEWARE
 // CHẶN TÌM KIẾM NGƯỜI DÙNG ĐÃ XÓA TÀI KHOẢN => VÔ HIỆU HÓA LUÔN GETALL(), GETONE(), LOGIN()
 userSchema.pre(/^find/, function(next) {
   // this points to the current query
@@ -88,7 +89,7 @@ userSchema.pre(/^find/, function(next) {
 });
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-// METHODS
+// DOCUMENT METHODS
 // 1) SO SÁNH MÂT KHẨU ĐỂ ĐĂNG NHẬP
 // 2) SO SÁNH THỜI GIAN ĐỔI MẬT KHẨU VỚI THỜI GIAN TẠO TOKEN JWT ĐĂNG NHẬP
 // 3) TẠO TOKEN CRYTO GIỬ CHO KHÁCH HÀNG ĐỂ ĐỔI MẬT KHẨU
@@ -139,6 +140,7 @@ userSchema.methods.createPasswordResetToken = function() {
   return resetToken;
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;

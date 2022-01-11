@@ -86,6 +86,7 @@ exports.getAll = Model =>
       .limitFields()
       .paginate();
     // const doc = await features.query.explain();
+    // cho phép thống kê lúc đọc dữ liệu
     const doc = await features.query;
 
     // SEND RESPONSE
