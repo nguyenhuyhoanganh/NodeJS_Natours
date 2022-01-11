@@ -34,6 +34,10 @@ const reviewSchema = new mongoose.Schema(
     toObject: { virtuals: true } // dữ liệu được xuất như 1 Object
   }
 );
+// INĐEXES
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
+// thêm option thứ 2 để đặt cặp key tour_user là duy nhất
+// tránh cho 1 người dùng review về 1 tour 2 lần
 
 // QUERY MIDDLEWARE
 reviewSchema.pre(/^find/, function(next) {
