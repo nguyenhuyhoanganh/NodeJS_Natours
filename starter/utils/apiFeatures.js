@@ -1,3 +1,10 @@
+/**
+ * Theo giải thích của Jonas: thuộc tính query trong class APIFeatures là Model.find()
+ * theo đó query sẽ là 1 mongoose.query tìm tất cả document của 1 schema nhưng sẽ không thực thi ngay để trả về document (không đi kèm await)
+ * vì là mongoose.query nên cho phép xâu chuỗi các query như: Tour.find().find(JSON.parse(queryStr)) bằng cách: this.query = this.query.find(JSON.parse(queryStr));
+ * sau đó cuối chuỗi truy vấn t sử dụng: const tours = await features.query; để đón kết quả trả về cả cả chuỗi truy vấn
+ */
+
 class APIFeatures {
   constructor(query, queryString) {
     this.query = query;

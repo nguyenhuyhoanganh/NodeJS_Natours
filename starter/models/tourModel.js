@@ -136,6 +136,11 @@ const tourSchema = new mongoose.Schema(
 tourSchema.index({ slug: 1 });
 // đánh chỉ mục cho slug, giúp truy vấn với slug nhanh hơn nhưng tốn bộ nhớ hơn
 
+// gắn chỉ mục cho startLocation, để thực hiện các truy vấn địa lý
+tourSchema.index({ startLocation: '2dsphere' });
+// đối với dữ liệu không gian địa lý, chỉ số này cần phải là "2dsphere" nếu dữ liệu mô tả các điểm thực trên Trái đất giống như hình cầu
+// sử dụng "2dindex" nếu chúng ta chỉ sử dụng các điểm hư cấu trên một mặt phẳng hai chiều đơn giản
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // VIRTUAL PROPERTIES
 tourSchema.virtual('durationWeek').get(function() {
@@ -204,6 +209,9 @@ tourSchema.post(/^find/, function(docs, next) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // AGGREGATION MIDDLEWARE
+// vì AGGREGATION MIDDLEWARE thực thi trước tất cả AGGREGATION => tạm loại bỏ để thực thi AGGREGATION $geonear trước
+// sau sẽ khác phụ bằng if, else
+/*
 tourSchema.pre('aggregate', function(next) {
   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
   // ẩn secretTour = true
@@ -212,6 +220,7 @@ tourSchema.pre('aggregate', function(next) {
   console.log(this.pipeline());
   next();
 });
+*/
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 const Tour = mongoose.model('Tour', tourSchema);
 //'Tour' sẽ đổ thành collection tours trong db

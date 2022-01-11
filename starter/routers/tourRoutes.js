@@ -29,6 +29,16 @@ router
     tourController.getMonthlyPlan
   );
 
+// cho biết cách tour trong vòng :distance (:unit) so với vị trí đang sống
+router
+  .route('/tours-within/:distance/center/:latlng/unit/:unit')
+  .get(tourController.getToursWithin);
+// /tours-within?distance=233&center=-40,45&unit=mi
+// /tours-within/233/center/-40,45/unit/mi : cách tọa độ -40,45 dưới 233 mi
+
+// lấy ra tên tour, khoảng cách đến các tour
+router.route('/distances/:latlng/unit/:unit').get(tourController.getDistances);
+
 router
   .route('/')
   .get(tourController.getAllTours)
